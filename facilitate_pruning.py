@@ -153,7 +153,6 @@ def compute_saliency_score_channel(tensor_t, n=1, dim_to_keep=[0], prune_amount=
     return score_value
 
 
-
 # In[6]:
 def deep_copy_kernelwise(destination_model, source_model):
     for i in range(len(source_model.features)):
@@ -186,28 +185,27 @@ def deep_copy_features_channel_wise_v_old(source_model, destination_model, featu
                     destination_model.features[l]._parameters['weight'][out_ch_new] = t
                     out_ch_old +=1
                 
-
-def deep_copy_features_channel_wise(source_model, destination_model, feature_list, prune_index):
-    prev_conv_layer = 0
-    for ls in range(len(source_model.features)):
-        if str(source_model.features[ls]).find('Conv') != -1:
-            
-            size_source = source_model.features[ls]._parameters['weight'].shape
-            size_dest = destination_model.features[ls]._parameters['weight'].shape
+# In[]
+def deep_copy_features_channel_wise(source_model, destination_model, feature_list, prune_index_list):
+    prev_conv_layer = -1
+    for current_layer in range(len(source_model.features)):
+        if str(source_model.features[current_layer]).find('Conv') != -1:
+            size_source = source_model.features[current_layer]._parameters['weight'].shape
+            size_dest = destination_model.features[current_layer]._parameters['weight'].shape
             out_ch_dest =0
             
             for out_ch_source in range(size_source[0]):
-                if torch.norm(source_model.features[ls]._parameters['weight'][out_ch_source]) != 0:
-                    t = source_model.features[ls]._parameters['weight'][out_ch_source]
+                if torch.norm(source_model.features[current_layer]._parameters['weight'][out_ch_source]) != 0:
+                    t = source_model.features[current_layer]._parameters['weight'][out_ch_source]
                     in_ch_dest = 0
-                    for in_ch_source in range(size_source[1]):
-                        if prev_conv_layer !=0:
-                            if in_ch_source in prune_index[prev_conv_layer]:
-                                continue
-                        if in_ch_dest < size_dest[1]:
-                            destination_model.features[ls]._parameters['weight'][out_ch_dest][in_ch_dest] = t[in_ch_source]
-                            in_ch_dest +=1
-            out_ch_dest += 1
-            prev_conv_layer = ls
 
-
+                    if out_ch_dest <=size_dest[0]:
+                        for in_ch_source in range(size_source[1]):
+                            if prev_conv_layer !=-1:
+                                if in_ch_source in prune_index_list[prev_conv_layer]:
+                                    continue
+                            if in_ch_dest < size_dest[1]:
+                                destination_model.features[current_layer]._parameters['weight'][out_ch_dest][in_ch_dest] = t[in_ch_source]
+                                in_ch_dest +=1
+                        out_ch_dest += 1
+            prev_conv_layer += 1 

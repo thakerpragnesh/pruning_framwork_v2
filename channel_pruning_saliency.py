@@ -218,10 +218,12 @@ def iterative_channel_pruning_saliency_block_wise(new_model_arg, prune_module,
     with open(outLogFile, "a") as out_file:
         out_file.write("\nPruning Process Start")
     out_file.close()
+    print("\nPruning Process Start")
     # pc = [1, 3, 9, 26, 51]
     
     global new_list
     global layer_base
+    global d1
     
     for e in range(prune_epochs):
         start = 0
@@ -262,25 +264,36 @@ def iterative_channel_pruning_saliency_block_wise(new_model_arg, prune_module,
         for param in temp_model.parameters():
             param.requires_grad = False
         
+        print("printing prune index")
+        for i in range(len(prune_index)):
+            print(prune_index[i])
+        
         fp.deep_copy_features_channel_wise(new_model, temp_model, feature_list, prune_index)
         #deep_copy(temp_model, new_model_arg)
         
+        '''
+        for param in temp_model.parameters():
+            param.requires_grad = True
         
+        '''
         #lm.unfreeze(temp_model, conv_layer_index)
         count = 30
+        number_of_layers = len(temp_model.features)
+        print()
         index_value=0
-        for count in range(30,0,-1):
+        for count in range(number_of_layers-1,-1,-1):
             print(count)
             for param in temp_model.parameters():
                 if index_value == count:
                     param.requires_grad = True
-            
+       #'''     
+        print("deep copy completed and we unfreesed the parameter")
         # 10.  Train pruned model
         with open(outLogFile, 'a') as out_file:
-            out_file.write('\n ...Deep Copy Completed...')
-            out_file.write('\n Fine tuning started....')
+            out_file.write(f'\n ...Deep Copy Completed...on {d1}')
+            out_file.write('\n Fine tuning started....on {d1}')
         out_file.close()
-
+        print(('\n Fine tuning started....on {d1}'))
         tm.fit_one_cycle( dataloaders=dataLoaders,
                           train_dir=dl.train_directory, test_dir=dl.test_directory,
                           # Select a variant of VGGNet
