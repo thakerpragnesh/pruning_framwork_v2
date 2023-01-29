@@ -172,7 +172,7 @@ def deep_copy_kernelwise(destination_model, source_model):
                         j = j + 1
 
 
-# In[7]
+# In[7]:
 def deep_copy_features_channel_wise_v_old(source_model, destination_model, feature_list):
     for l in range(len(source_model.features)):
         if str(source_model.features[l]).find('Conv') != -1:
@@ -185,25 +185,30 @@ def deep_copy_features_channel_wise_v_old(source_model, destination_model, featu
                     destination_model.features[l]._parameters['weight'][out_ch_new] = t
                     out_ch_old +=1
                 
-# In[]
+# In[8]: new version deep_copy_feature_channelwise
 def deep_copy_features_channel_wise(source_model, destination_model, feature_list, prune_index_list):
     prev_conv_layer = -1
     for current_layer in range(len(source_model.features)):
         if str(source_model.features[current_layer]).find('Conv') != -1:
             size_source = source_model.features[current_layer]._parameters['weight'].shape
             size_dest = destination_model.features[current_layer]._parameters['weight'].shape
+
             out_ch_dest =0
-            
             for out_ch_source in range(size_source[0]):
+                # check if chnnel is not pruned
                 if torch.norm(source_model.features[current_layer]._parameters['weight'][out_ch_source]) != 0:
                     t = source_model.features[current_layer]._parameters['weight'][out_ch_source]
                     in_ch_dest = 0
 
                     if out_ch_dest <=size_dest[0]:
                         for in_ch_source in range(size_source[1]):
+                            
+                            # check that input layer is not actual input layer
                             if prev_conv_layer !=-1:
+                                # skip copy for the kernel whose input channel is zero
                                 if in_ch_source in prune_index_list[prev_conv_layer]:
                                     continue
+                            
                             if in_ch_dest < size_dest[1]:
                                 destination_model.features[current_layer]._parameters['weight'][out_ch_dest][in_ch_dest] = t[in_ch_source]
                                 in_ch_dest +=1
